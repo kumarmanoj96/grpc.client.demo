@@ -2,11 +2,9 @@ package com.manoj.grpc.client.demo;
 
 import java.util.Iterator;
 
-import com.proto.calculator.CalculatorServiceGrpc;
-import com.proto.calculator.CalculatorServiceGrpc.CalculatorServiceBlockingStub;
-import com.proto.calculator.SumRequest;
+import com.manoj.grpc.client.demo.clients.CalculatorClient;
+import com.manoj.grpc.client.demo.clients.GreetClient;
 import com.proto.calculator.SumResponse;
-import com.proto.greet.GreetManyTimesRequest;
 import com.proto.greet.GreetManyTimesResponse;
 import com.proto.greet.GreetMessage;
 import com.proto.greet.GreetRequest;
@@ -21,40 +19,47 @@ import io.grpc.ManagedChannelBuilder;
 public class GrpcJavaClient {
 
 	public static void main(String[] args) {
-//		SpringApplication.run(GreetingClient.class, args);
 		System.out.println("hello i am grpc client");
-		ManagedChannel channel1 = ManagedChannelBuilder.forAddress("localhost", 51234).usePlaintext().build();
+		/*
+		 * 1.creating channel and then creating stub(client) from that channel and then
+		 * calling RPC's
+		 */
+		ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 51234).usePlaintext().build();
 
 		// created a greet service stub(client)(blocking - synchornous)
-		GreetServiceBlockingStub greetClient = GreetServiceGrpc.newBlockingStub(channel1);
+		GreetServiceBlockingStub greetServiceClient = GreetServiceGrpc.newBlockingStub(channel);
 
-//		created a protocol buffer for GreetMessage
+		// created a protocol buffer for GreetMessage
 		GreetMessage greetMessage = GreetMessage.newBuilder().setFirstName("manoj").setLastName("kumar:").build();
 		// created a protocol buffer for GreetRequest
 		GreetRequest greetRequest = GreetRequest.newBuilder().setGreetMessage(greetMessage).build();
 		// called the RPC and got the response (protocol buffers
-		GreetResponse greetResponse = greetClient.greet(greetRequest);
+		GreetResponse response = greetServiceClient.greet(greetRequest);
+		System.out.println(response.getResult());
+		// System.out.println("sutting down channel");
+		channel.shutdown();
+
+		/*
+		 * all the logic of creating channel , creating stub and shutting down channel
+		 * is put inside a helper class
+		 */
+
+		GreetClient greetClient = new GreetClient(51234);
+		GreetResponse greetResponse = greetClient.Greet("manoj", "kumar");
 		System.out.println(greetResponse.getResult());
-//		System.out.println("sutting down channel");
-//		channel1.shutdown();
 
-		ManagedChannel channel2 = ManagedChannelBuilder.forAddress("localhost", 11111).usePlaintext().build();
-		CalculatorServiceBlockingStub calculatorClient = CalculatorServiceGrpc.newBlockingStub(channel2);
+		Iterator<GreetManyTimesResponse> greetManyTimesResponse = greetClient.GreetManyTimes("manoj", "kumar");
 
-		SumRequest sumRequest = SumRequest.newBuilder().setFirstNumber(3).setSecondNumber(7).build();
-		SumResponse sumResponse = calculatorClient.sum(sumRequest);
-		System.out.println(sumResponse.getResult());
-		channel2.shutdown();
-
-		// server streaming
-		GreetManyTimesRequest greetManyTimesRequest = GreetManyTimesRequest.newBuilder().setGreetMessage(greetMessage)
-				.build();
-		Iterator<GreetManyTimesResponse> greetManyTimesResponse = greetClient.greetManyTimes(greetManyTimesRequest);
 		greetManyTimesResponse.forEachRemaining(resp -> {
 			System.out.println(resp.getResult());
 		});
-		System.out.println("sutting down channel");
-		channel1.shutdown();
+		greetClient.shutdown();
+
+		CalculatorClient calculatorClient = new CalculatorClient(11111);
+		SumResponse sumResponse = calculatorClient.Sum(3, 7);
+		System.out.println(sumResponse.getResult());
+		calculatorClient.shutdown();
+
 	}
 
 }
