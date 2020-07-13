@@ -56,7 +56,7 @@ test {
 
 
 task copyProto(type: Copy) {
-  from 'proto-files/dummy/dummy.proto','proto-files/greet/greet.proto','proto-files/calculator/sum.proto'
+  from 'demo_proto_files/dummy/dummy.proto','demo_proto_files/greet/greet.proto','demo_proto_files/calculator/sum.proto'
   into 'src/main/proto'
   doLast {
 	println "Finished copying proto files"
